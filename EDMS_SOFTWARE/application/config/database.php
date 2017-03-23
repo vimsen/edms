@@ -48,10 +48,10 @@
 $active_group = 'default';
 $active_record = TRUE;
 
-$db['default']['hostname'] = 'hostname';
-$db['default']['username'] = 'username';
-$db['default']['password'] = 'password';
-$db['default']['database'] = 'databasename';
+$db['default']['hostname'] = '';
+$db['default']['username'] = '';
+$db['default']['password'] = '';
+$db['default']['database'] = '';
 $db['default']['dbdriver'] = 'mysql';
 $db['default']['dbprefix'] = '';
 $db['default']['pconnect'] = FALSE;
@@ -64,11 +64,10 @@ $db['default']['swap_pre'] = '';
 $db['default']['autoinit'] = TRUE;
 $db['default']['stricton'] = FALSE;
 
-$db['default']['hostname'] = 'hostname';
-$db['default']['username'] = 'username';
-$db['default']['password'] = 'password';
-$db['default']['database'] = 'databasename';
-$db['intelen']['database'] = 'intelen';
+$db['intelen']['hostname'] = '';
+$db['intelen']['username'] = '';
+$db['intelen']['password'] = '';
+$db['intelen']['database'] = '';
 $db['intelen']['dbdriver'] = 'mysql';
 $db['intelen']['dbprefix'] = '';
 $db['intelen']['pconnect'] = FALSE;
