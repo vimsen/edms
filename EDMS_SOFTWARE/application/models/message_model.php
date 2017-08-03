@@ -31,7 +31,7 @@ class message_model extends CI_Model {
 
         $db = $this->load->database('default', TRUE);
 
-        $sql = " select * from VimsentPlatform.topicMessageRealTime where status='on' order by changeUPdate desc limit 200";
+        $sql = " select * from topicMessageRealTime where status='on' order by changeUPdate desc limit 200";
 
         $query = $db->query($sql);
 

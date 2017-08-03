@@ -12,6 +12,19 @@
  * @author hulk
  */
 class execute_model extends CI_Model {
+    
+    function new_results($startDate, $endDate, $mac, $interval) {
+        $sql = "SELECT avg(payload) as payload, mac, FROM_UNIXTIME(? * ceil(UNIX_TIMESTAMP(received)/(?)),'%Y-%m-%dT%TZ') AS timekey FROM `mqtt_logs_insert` group by timekey,mac order by timekey asc";
+        $query = $this->db->query($sql, array($interval, $interval));
+        foreach ($query->result() as $row) {
+            $consumption[] = array($row->timekey => $row->payload);
+        }
+        $main_data[] = array('ProsumerId' => $mac, 'Production' => [], 'Storage' => [], 'Consumption' => $consumption, 'ForecastConsumption' => [], 'ForecastProduction' => [], 'Flexibility' => [], 'Reliability' => []);
+        echo json_encode($main_data);
+    }
+    
+    
+    
 
     //put your code here
      
@@ -50,7 +63,7 @@ class execute_model extends CI_Model {
     }
 
 
-    function block_data_now($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $interval, $testFlag = null, $consumptionFlag = null) {
+    function block_data_now($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $testFlag = null, $consumptionFlag = null) {
 
 
         if ($interval) {
@@ -76,8 +89,10 @@ class execute_model extends CI_Model {
         }
     }
 
-    function block_data_past($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $interval, $testFlag = null) {
+    function block_data_past($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $testFlag = null) {
 
+        
+        error_log("Hello in block");
 
         if ($interval) {
 
@@ -103,7 +118,7 @@ class execute_model extends CI_Model {
         }
     }
 
-    function block_data_mainsource_join_past_present($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $interval, $consumptionFlag = null) {
+    function block_data_mainsource_join_past_present($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $consumptionFlag = null) {
 
 
         if ($interval) {
@@ -313,7 +328,7 @@ class execute_model extends CI_Model {
 
         if ($total == 1) {
 
-            $sql = "SELECT mac,sum(payload),unix_timestamp(received) as timestampD,received,payload FROM VimsentPlatform.mqtt_logs"
+            $sql = "SELECT mac,sum(payload),unix_timestamp(received) as timestampD,received,payload FROM mqtt_logs"
                     . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                     . " GROUP BY date(received) order by unix_timestamp(received) desc";
 
@@ -332,7 +347,7 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,COALESCE(sum(payload),0) as data,ROUND(COALESCE(sum(payload),0),2) as roundUP,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic "
-                        . "FROM VimsentPlatform.mqtt_logs "
+                        . "FROM mqtt_logs "
                         . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                         . " $groupby topic_c order by time asc";
 
@@ -353,155 +368,155 @@ class execute_model extends CI_Model {
                 if ($interval == 900) {
 
                     $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_900 "
+                            . "FROM mqtt_logs_prediction_900 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' and interval_radios='900' "
                             . "  order by received ";
 
 
                     $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_900 "
+                            . "FROM mqtt_logs_prediction_900 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' and interval_radios='900' "
                             . "  order by received ";
 
 
                     $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_900 "
+                            . "FROM mqtt_logs_prediction_900 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_energy_consumption_300' and interval_radios='900' "
                             . "  order by received ";
 
 
                     $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_900 "
+                            . "FROM mqtt_logs_prediction_900 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_power' and interval_radios='900' "
                             . "  order by received ";
 
                     $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_900 "
+                            . "FROM mqtt_logs_prediction_900 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='meter1_power' and interval_radios='900' "
                             . "  order by received ";
                 } elseif ($interval == 3600) {
 
 
                     $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_3600 "
+                            . "FROM mqtt_logs_prediction_3600 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' and interval_radios='3600' "
                             . "  order by received ";
 
 
                     $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_3600 "
+                            . "FROM mqtt_logs_prediction_3600 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' and interval_radios='3600' "
                             . "  order by received ";
 
                     $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_3600 "
+                            . "FROM mqtt_logs_prediction_3600 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_energy_consumption_300' and interval_radios='3600' "
                             . "  order by received ";
 
 
                     $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_3600 "
+                            . "FROM mqtt_logs_prediction_3600 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_power' and interval_radios='3600' "
                             . "  order by received ";
 
 
                     $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_3600 "
+                            . "FROM mqtt_logs_prediction_3600 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='meter1_power' and interval_radios='3600' "
                             . "  order by received ";
                 } elseif ($interval == 86400) {
 
                     $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_86400 "
+                            . "FROM mqtt_logs_prediction_86400 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' and interval_radios='86400' "
                             . "  group by received order by received ";
 
 
                     $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_86400 "
+                            . "FROM mqtt_logs_prediction_86400 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' and interval_radios='86400' "
                             . "  group by received order by received ";
 
                     $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_86400 "
+                            . "FROM mqtt_logs_prediction_86400 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_energy_consumption_300' and interval_radios='86400' "
                             . "  group by received order by received ";
 
 
                     $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_86400 "
+                            . "FROM mqtt_logs_prediction_86400 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_power' and interval_radios='86400' "
                             . "  group by received order by received ";
 
 
                     $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_86400 "
+                            . "FROM mqtt_logs_prediction_86400 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='meter1_power' and interval_radios='86400' "
                             . "  group by received order by received ";
                 } elseif ($interval == 300) {
 
                     $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_300 "
+                            . "FROM mqtt_logs_prediction_300 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' and interval_radios='300' "
                             . "  order by received ";
 
 
                     $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_300 "
+                            . "FROM mqtt_logs_prediction_300 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' and interval_radios='300' "
                             . "  order by received ";
 
 
                     $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_300 "
+                            . "FROM mqtt_logs_prediction_300 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_energy_consumption_300' and interval_radios='300' "
                             . "  order by received ";
 
 
                     $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_300 "
+                            . "FROM mqtt_logs_prediction_300 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_power' and interval_radios='300' "
                             . "  order by received ";
 
                     $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_300 "
+                            . "FROM mqtt_logs_prediction_300 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='meter1_power' and interval_radios='300' "
                             . "  order by received ";
                 } elseif ($interval == 60) {
 
                     $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_60 "
+                            . "FROM mqtt_logs_prediction_60 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' and interval_radios='60' "
                             . "  order by received ";
 
 
                     $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_60 "
+                            . "FROM mqtt_logs_prediction_60 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' and interval_radios='60' "
                             . "  order by received ";
 
 
                     $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_60 "
+                            . "FROM mqtt_logs_prediction_60 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_energy_consumption_300' and interval_radios='60' "
                             . "  order by received ";
 
 
                     $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_60 "
+                            . "FROM mqtt_logs_prediction_60 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='total_power' and interval_radios='60' "
                             . "  order by received ";
 
 
                     $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received,mac,topic_c "
-                            . "FROM VimsentPlatform.mqtt_logs_prediction_60 "
+                            . "FROM mqtt_logs_prediction_60 "
                             . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='meter1_power' and interval_radios='60' "
                             . "  order by received ";
                 }
 
                 $sql_present = "SELECT mac,ROUND(COALESCE(sum(payload),0),2) as roundUP,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' "
                         . " $groupby time order by time ";
 
@@ -509,27 +524,27 @@ class execute_model extends CI_Model {
 
                 $sql1_present = "SELECT count(mac) as countField,ROUND(sum(payload),2) as sumPayload,mac,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' "
                         . "  group by time order by time ";
 
 
                 $sql_2_present = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd "
                         . " and topic_c='total_energy_consumption_300' GROUP BY time order by time ";
 
-                $sql_2a_present = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
+                $sql_2a_present = "SELECT mac,unix_timestamp(received) as timestampD,received,avg(payload) as payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM edms.mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd "
                         . " and topic_c='total_power' GROUP BY time order by time ";
 
 
                 $sql_3a_present = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd "
                         . " and topic_c='meter1_power' GROUP BY time order by time ";
 
@@ -547,14 +562,14 @@ class execute_model extends CI_Model {
                 $tomorrowDay = date("Y-m-d", strtotime("+ 1 day"));
 
 
-                $sql5 = "select vimJson as total_energy_consumptionResult from VimsentPlatform.vimsentForecastTemp where mac='$mac' and forecast='total_energy_consumptionResult' and dateInsertCall='$OneDayAhead'";
+                $sql5 = "select vimJson as total_energy_consumptionResult from vimsentForecastTemp where mac='$mac' and forecast='total_energy_consumptionResult' and dateInsertCall='$OneDayAhead'";
 
-                $sql6 = "select vimJson as production_forecast from VimsentPlatform.vimsentForecastTemp where mac='$mac' and forecast='production_forecast' and dateInsertCall='$OneDayAhead'";
-
-
+                $sql6 = "select vimJson as production_forecast from vimsentForecastTemp where mac='$mac' and forecast='production_forecast' and dateInsertCall='$OneDayAhead'";
 
 
-                $sql7 = "select * from VimsentPlatform.reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`date`) < " . strtotime($enddate) . "";
+
+
+                $sql7 = "select * from reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`date`) < " . strtotime($enddate) . "";
 
 
                 $flexibility = [];
@@ -778,7 +793,7 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic "
-                        . "FROM VimsentPlatform.mqtt_logs "
+                        . "FROM mqtt_logs "
                         . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                         . "  order by time asc";
 
@@ -795,7 +810,7 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,COALESCE(sum(payload),0) as data,ROUND(COALESCE(sum(payload),0),2) as roundUP,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic "
-                        . "FROM VimsentPlatform.mqtt_logs "
+                        . "FROM mqtt_logs "
                         . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                         . " $groupby topic_c order by time asc";
 
@@ -812,7 +827,7 @@ class execute_model extends CI_Model {
         } else {
 
 
-            $sql = "SELECT mac,payload,unix_timestamp(received) as timestampD,received,payload,topic FROM VimsentPlatform.mqtt_logs"
+            $sql = "SELECT mac,payload,unix_timestamp(received) as timestampD,received,payload,topic FROM mqtt_logs"
                     . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                     . " order by unix_timestamp(received) desc";
 
@@ -970,17 +985,17 @@ class execute_model extends CI_Model {
 
                     $mqtt_logs_prediction_900 = "mqtt_logs_hedno2_hourly";
                     $mqtt_logs_prediction_3600 = "mqtt_logs_hedno2_hourly";
-                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility_3600 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility_3600 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 } elseif ($interval == 86400) {
 
                     $mqtt_logs_prediction_900 = "mqtt_logs_hedno2_daily";
                     $mqtt_logs_prediction_86400 = "mqtt_logs_hedno2_daily";
-                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility_86400 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility_86400 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 } else {
 
 
                     $mqtt_logs_prediction_900 = "mqtt_logs_hedno2";
-                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 }
 
 
@@ -997,7 +1012,7 @@ class execute_model extends CI_Model {
                     $time = date('H:i', strtotime($pieces_enddate[1] . '+1 hour'));
                     $enddatestorage = $pieces_enddate[0] . "+" . $time;
 
-                    $sql8 = "select mac,storage,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.storage where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql8 = "select mac,storage,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from storage where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                     $query8 = $this->db->query($sql8);
                 }
 
@@ -1028,16 +1043,16 @@ class execute_model extends CI_Model {
                 $tomorrowDay = date("Y-m-d", strtotime("{$enddate} + 1 day"));
                 if ($interval == 900) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } elseif ($interval == 3600) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingHourly where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingHourly where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } elseif ($interval == 86400) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingDaily where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingDaily where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } elseif ($interval == 900) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } else {
 
                     $sqlf = "";
@@ -1075,13 +1090,13 @@ class execute_model extends CI_Model {
 
                 if ($interval == 3600) {
 
-                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility_3600 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility_3600 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 } elseif ($interval == 86400) {
 
-                    $sql7 = "select mac,date,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility_86400 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,date,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility_86400 where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 } elseif ($interval == 900) {
 
-                    $sql7 = "select mac,date,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,date,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 } else {
 
                     $sql7 = "";
@@ -1100,7 +1115,7 @@ class execute_model extends CI_Model {
                     $enddatestorage = $pieces_enddate[0] . "+" . $time;
 
 
-                    $sql8 = "select mac,storage,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.storage where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql8 = "select mac,storage,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from storage where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
 
                     $query8 = $this->db->query($sql8);
                 }
@@ -1127,16 +1142,16 @@ class execute_model extends CI_Model {
 
                 if ($interval == 900) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } elseif ($interval == 3600) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingHourly where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingHourly where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } elseif ($interval == 86400) {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingDaily where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingDaily where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 } else {
 
-                    $sqlf = "select * from VimsentPlatform.forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
+                    $sqlf = "select * from forecastingQuarter where mac='$mac' and date(timestamp)= '$tomorrowDay'";
                 }
 
 
@@ -1169,7 +1184,7 @@ class execute_model extends CI_Model {
 
                 if ($interval == 900) {
 
-                    $sql7 = "select mac,date,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from VimsentPlatform.reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
+                    $sql7 = "select mac,date,flexibility,reliability,CONVERT_TZ( date, 'UTC', '+$time_zoneSearch[1]' ) as date from reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`date`) < " . $searchTimestampendDate . "";
                 } else {
                     $sql7 = "";
                 }
@@ -1186,9 +1201,9 @@ class execute_model extends CI_Model {
 
                 $tomorrowDay = date("Y-m-d", strtotime("+ 1 day"));
 
-                $sql5 = "select vimJson as total_energy_consumptionResult from VimsentPlatform.vimsentForecastTemp where mac='$mac' and forecast='total_energy_consumptionResult' and dateInsertCall='$OneDayAhead'";
+                $sql5 = "select vimJson as total_energy_consumptionResult from vimsentForecastTemp where mac='$mac' and forecast='total_energy_consumptionResult' and dateInsertCall='$OneDayAhead'";
 
-                $sql6 = "select vimJson as production_forecast from VimsentPlatform.vimsentForecastTemp where mac='$mac' and forecast='production_forecast' and dateInsertCall='$OneDayAhead'";
+                $sql6 = "select vimJson as production_forecast from vimsentForecastTemp where mac='$mac' and forecast='production_forecast' and dateInsertCall='$OneDayAhead'";
 
                 $query5 = $this->db->query($sql5);
 
@@ -1211,30 +1226,30 @@ class execute_model extends CI_Model {
 
 
                 $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_900 "
+                        . "FROM $mqtt_logs_prediction_900 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_battery_percentage'  "
                         . "  order by received ";
 
 
                 $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_900 "
+                        . "FROM $mqtt_logs_prediction_900 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_power'  "
                         . "  order by received ";
 
 
                 $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_900 "
+                        . "FROM $mqtt_logs_prediction_900 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_energy_consumption_300'  "
                         . "  order by received ";
 
 
                 $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_900 "
+                        . "FROM $mqtt_logs_prediction_900 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_power'  "
                         . "  order by received ";
 
                 $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /900) *900,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_900 "
+                        . "FROM $mqtt_logs_prediction_900 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='meter1_power'  "
                         . "  order by received ";
             } elseif ($interval == 3600) {
@@ -1243,86 +1258,86 @@ class execute_model extends CI_Model {
 
 
                 $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_3600 "
+                        . "FROM $mqtt_logs_prediction_3600 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_battery_percentage'  "
                         . "  order by received ";
 
 
                 $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_3600 "
+                        . "FROM $mqtt_logs_prediction_3600 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_power'  "
                         . "  order by received ";
 
                 $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_3600 "
+                        . "FROM $mqtt_logs_prediction_3600 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_energy_consumption_300'  "
                         . "  order by received ";
 
 
                 $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_3600 "
+                        . "FROM $mqtt_logs_prediction_3600 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_power'  "
                         . "  order by received ";
 
                 $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /3600) *3600,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_3600 "
+                        . "FROM $mqtt_logs_prediction_3600 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='meter1_power'  "
                         . "  order by received ";
             } elseif ($interval == 86400) {
 
                 $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_86400 "
+                        . "FROM $mqtt_logs_prediction_86400 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_battery_percentage'  "
                         . "  group by received order by received ";
 
                 $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_86400 "
+                        . "FROM $mqtt_logs_prediction_86400 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_power'  "
                         . "  group by received order by received ";
 
                 $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_86400 "
+                        . "FROM $mqtt_logs_prediction_86400 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_energy_consumption_300'  "
                         . "  group by received order by received ";
 
                 $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_86400 "
+                        . "FROM $mqtt_logs_prediction_86400 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_power'  "
                         . "  group by received order by received ";
 
                 $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /86400) *86400,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_86400 "
+                        . "FROM $mqtt_logs_prediction_86400 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='meter1_power'  "
                         . "  group by received order by received ";
             } elseif ($interval == 300) {
 
 
                 $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_300 "
+                        . "FROM $mqtt_logs_prediction_300 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_battery_percentage'  "
                         . "  order by received ";
 
 
                 $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_300 "
+                        . "FROM $mqtt_logs_prediction_300 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_power'  "
                         . "  order by received ";
 
 
                 $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_300 "
+                        . "FROM $mqtt_logs_prediction_300 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_energy_consumption_300'  "
                         . "  order by received ";
 
 
                 $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_300 "
+                        . "FROM $mqtt_logs_prediction_300 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_power'  "
                         . "  order by received ";
 
 
                 $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /300) *300,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_300 "
+                        . "FROM $mqtt_logs_prediction_300 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='meter1_power'  "
                         . "  order by received ";
             } elseif ($interval == 60) {
@@ -1330,31 +1345,31 @@ class execute_model extends CI_Model {
 
 
                 $sql = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_60 "
+                        . "FROM $mqtt_logs_prediction_60 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_battery_percentage'  "
                         . "  order by received ";
 
 
                 $sql1 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_60 "
+                        . "FROM $mqtt_logs_prediction_60 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='PV1_production_power'  "
                         . "  order by received ";
 
 
                 $sql3 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_60 "
+                        . "FROM $mqtt_logs_prediction_60 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_energy_consumption_300'  "
                         . "  order by received ";
 
 
                 $sql4 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_60 "
+                        . "FROM $mqtt_logs_prediction_60 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='total_power'  "
                         . "  order by received ";
 
 
                 $sql5 = "SELECT payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /60) *60,'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as received2,mac,topic_c,CONVERT_TZ( received, 'UTC', '+$time_zoneSearch[1]' ) as received "
-                        . "FROM VimsentPlatform.$mqtt_logs_prediction_60 "
+                        . "FROM $mqtt_logs_prediction_60 "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . $searchTimestampstartDate . " and UNIX_TIMESTAMP(`received`) < " . $searchTimestampendDate . " $MacAnd and topic_c='meter1_power'  "
                         . "  order by received ";
             }
@@ -1632,7 +1647,7 @@ class execute_model extends CI_Model {
 
         if ($total == 1) {
 
-            $sql = "SELECT mac,sum(payload),unix_timestamp(received) as timestampD,received,payload FROM VimsentPlatform.mqtt_logs_insert"
+            $sql = "SELECT mac,sum(payload),unix_timestamp(received) as timestampD,received,payload FROM mqtt_logs_insert"
                     . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                     . " GROUP BY date(received) order by unix_timestamp(received) desc";
 
@@ -1651,7 +1666,7 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,COALESCE(sum(payload),0) as data,ROUND(COALESCE(sum(payload),0),2) as roundUP,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                         . " $groupby topic_c order by time asc";
 
@@ -1671,33 +1686,33 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,ROUND(COALESCE(sum(payload),0),2) as roundUP,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_battery_percentage' "
                         . " $groupby time order by time ";
 
 
                 $sql1 = "SELECT count(mac) as countField,ROUND(sum(payload),2) as sumPayload,mac,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd and topic_c='PV1_production_power' "
                         . "  group by time order by time ";
 
 
                 $sql_2 = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd "
                         . " and topic_c='total_energy_consumption_300' GROUP BY time order by time ";
 
-                $sql_2a = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
+                $sql_2a = "SELECT mac,unix_timestamp(received) as timestampD,received,avg(payload) as payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd "
                         . " and topic_c='total_power' GROUP BY time order by time ";
 
                 $sql_2b_1 = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic,topic_c "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  UNIX_TIMESTAMP(`received`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`received`) < " . strtotime($enddate) . " $MacAnd "
                         . " and topic_c='meter1_power' GROUP BY time order by time ";
 
@@ -1714,9 +1729,9 @@ class execute_model extends CI_Model {
                 $tomorrowDay = date("Y-m-d", strtotime("+ 1 day"));
 
 
-                $sql_3 = "select vimJson as total_energy_consumptionResult from VimsentPlatform.vimsentForecastTemp where mac='$mac' and forecast='total_energy_consumptionResult' and dateInsertCall='$OneDayAhead'";
+                $sql_3 = "select vimJson as total_energy_consumptionResult from vimsentForecastTemp where mac='$mac' and forecast='total_energy_consumptionResult' and dateInsertCall='$OneDayAhead'";
 
-                $sql_4 = "select vimJson as production_forecast from VimsentPlatform.vimsentForecastTemp where mac='$mac' and forecast='production_forecast' and dateInsertCall='$OneDayAhead'";
+                $sql_4 = "select vimJson as production_forecast from vimsentForecastTemp where mac='$mac' and forecast='production_forecast' and dateInsertCall='$OneDayAhead'";
 
 
 
@@ -1734,7 +1749,7 @@ class execute_model extends CI_Model {
                 }
 
 
-                $sql7 = "select * from VimsentPlatform.reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`date`) < " . strtotime($enddate) . "";
+                $sql7 = "select * from reliability_flexibility where mac='$mac' and UNIX_TIMESTAMP(`date`) >= " . strtotime($startdate) . " and UNIX_TIMESTAMP(`date`) < " . strtotime($enddate) . "";
 
 
                 $flexibility = [];
@@ -1896,7 +1911,7 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                         . "  order by time asc";
 
@@ -1912,7 +1927,7 @@ class execute_model extends CI_Model {
 
                 $sql = "SELECT mac,COALESCE(sum(payload),0) as data,ROUND(COALESCE(sum(payload),0),2) as roundUP,unix_timestamp(received) as timestampD,received,payload,DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ceiling(unix_timestamp(received) /" . $interval . ") *"
                         . $interval . ",'%Y-%m-%dT%H:%i:%s' ), 'UTC', 'UTC'), '%Y-%m-%dT%H:%i:%s') as time,topic "
-                        . "FROM VimsentPlatform.mqtt_logs_insert "
+                        . "FROM mqtt_logs_insert "
                         . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                         . " $groupby topic_c order by time asc";
 
@@ -1928,7 +1943,7 @@ class execute_model extends CI_Model {
         } else {
 
 
-            $sql = "SELECT mac,payload,unix_timestamp(received) as timestampD,received,payload,topic FROM VimsentPlatform.mqtt_logs_insert"
+            $sql = "SELECT mac,payload,unix_timestamp(received) as timestampD,received,payload,topic FROM mqtt_logs_insert"
                     . " where  unix_timestamp(received) >= " . strtotime($startdate) . " and unix_timestamp(received) < " . strtotime($enddate) . " $MacAnd "
                     . " order by unix_timestamp(received) desc";
 
@@ -1950,7 +1965,7 @@ class execute_model extends CI_Model {
     function apiCallUpate($functionName, $status) {
 
 
-        $sql = "SELECT ApiCall FROM VimsentPlatform.http_api_call where  FunctionName ='$functionName' ";
+        $sql = "SELECT ApiCall FROM http_api_call where  FunctionName ='$functionName' ";
 
         $flag = 0;
 
@@ -1972,7 +1987,7 @@ class execute_model extends CI_Model {
 
                 $flag = $flag + 1;
 
-                $query = "UPDATE VimsentPlatform.http_api_call SET ApiCall = $flag where FunctionName='$functionName'";
+                $query = "UPDATE http_api_call SET ApiCall = $flag where FunctionName='$functionName'";
 
                 $this->db->query($query);
 
@@ -1980,7 +1995,7 @@ class execute_model extends CI_Model {
             } else {
 
 
-                $sqlInsert = "INSERT INTO VimsentPlatform.http_api_call (FunctionName,ApiCall,ApiDate)
+                $sqlInsert = "INSERT INTO http_api_call (FunctionName,ApiCall,ApiDate)
 VALUES ('" . $functionName . "', '" . 1 . "','" . date('Y-m-d h:i:s') . "')";
 
                 $this->db->query($sqlInsert);
@@ -1993,19 +2008,19 @@ VALUES ('" . $functionName . "', '" . 1 . "','" . date('Y-m-d h:i:s') . "')";
             if ($flag == 1) {
 
 
-                $query = "DELETE FROM VimsentPlatform.http_api_call WHERE FunctionName='$functionName'";
+                $query = "DELETE FROM http_api_call WHERE FunctionName='$functionName'";
 
                 $this->db->query($query);
             } elseif ($flag) {
 
                 $flag = $flag - 1;
 
-                $query = "UPDATE VimsentPlatform.http_api_call SET ApiCall = $flag where FunctionName='$functionName'";
+                $query = "UPDATE http_api_call SET ApiCall = $flag where FunctionName='$functionName'";
 
                 $this->db->query($query);
             } else {
 
-                $query = "DELETE FROM VimsentPlatform.http_api_call WHERE FunctionName='$functionName'";
+                $query = "DELETE FROM http_api_call WHERE FunctionName='$functionName'";
 
                 $this->db->query($query);
             }
