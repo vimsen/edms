@@ -92,13 +92,14 @@ class intelen5 extends REST_Controller {
 
         if (strtotime(date('Y-m-d')) == strtotime($pieces_timestamps[0])) {
            
-            $this->execute_model->block_data_now($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $interval, $testFlag, $consumptionFlag);
+            $this->execute_model->block_data_now($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $testFlag, $consumptionFlag);
         } elseif (strtotime($pieces_timestamps[0]) < strtotime(date('Y-m-d')) and strtotime($pieces_timestampsEndDate[0]) < strtotime(date('Y-m-d'))) {//$pieces_timestampsEndDate
          
             $this->execute_model->block_data_past($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $interval, $testFlag);
         } else {
           
             $this->execute_model->block_data_mainsource_join_past_present($startDate, $endDate, $mac, $Ptotal, $interval, $pointer, $interval, $consumptionFlag);
+            //$this->execute_model->new_results($startDate, $endDate, $mac, $interval);
         }
     }
 
