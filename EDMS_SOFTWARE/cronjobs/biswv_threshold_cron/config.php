@@ -5,18 +5,10 @@ define('THRESHOLD_ALERT_TYPE_ID', 1);
 
 define('SEND_MAIL', true);
 
-/*
-define('MASTER_EMAIL', '***REMOVED***');
-define('SMTP_HOST', '***REMOVED***');
-define('SMTP_USERNAME', '***REMOVED***');
-define('SMTP_PASSWORD', '***REMOVED***');
-*/
-
-
-define('MASTER_EMAIL', '***REMOVED***');
-define('SMTP_HOST', '***REMOVED***');
-define('SMTP_USERNAME', '***REMOVED***');
-define('SMTP_PASSWORD', '***REMOVED***');
+define('MASTER_EMAIL', '');
+define('SMTP_HOST', '');
+define('SMTP_USERNAME', '');
+define('SMTP_PASSWORD', '');
 
 
 // enables SMTP debug information (for testing)

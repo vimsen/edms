@@ -65,7 +65,7 @@ class intelen3 extends REST_Controller {
           
         } catch (Exception $ex) {
 
-            return $e;
+            return $ex;
         }
     }
 
